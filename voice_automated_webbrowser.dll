@@ -1,0 +1,595 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using MetroFramework.Forms;
+using System.Speech.Synthesis;
+using System.Speech.Recognition;
+using System.Xml;
+using System.Globalization;
+using System.IO;
+using System.Diagnostics;
+using System.Net;
+using Microsoft.VisualBasic.Devices;
+
+namespace MetroWebBrowser
+{
+    public partial class Form1 : MetroFramework.Forms.MetroForm
+    {   
+        SpeechSynthesizer s = new SpeechSynthesizer();
+        SpeechSynthesizer sSynth = new SpeechSynthesizer();
+        SpeechSynthesizer s1 = new SpeechSynthesizer();
+        Choices list = new Choices();
+        //private string myval;
+       /* public string Myval()
+        {
+            GetAccessibilityObjectById        }*/
+
+        public Form1()
+        {
+            s.SelectVoiceByHints(VoiceGender.Female);
+            sSynth.SelectVoiceByHints(VoiceGender.Female);
+            s1.SelectVoiceByHints(VoiceGender.Female);
+            s.Speak("Hello, I'm Voreal, the voice automated web browser. welcome to the future");
+            SpeechRecognitionEngine rec = new SpeechRecognitionEngine(new System.Globalization.CultureInfo("en-US"));
+            //SpeechRecognitionEngine s1rec = new SpeechRecognitionEngine(new System.Globalization.CultureInfo("en-US"));
+            list.Add(new String[] { "hello", "how are you doing", "hi", "reload", "refresh", "new tab", "go", "stop",
+                "go back","go forward", "zoom in to normal", "go to the text box", "bye", "address bar",
+                "open google.com","google", "google.com", "facebook.com", "open facebook.com", "open facebook",
+                "open","zoom in","zoom out","scroll down","scroll up", "scroll right","scroll left","go to top",
+                "close", "open avanthi", "go to end", "open gmail", "login","close tab" });
+            Grammar gr = new Grammar(new GrammarBuilder(list));
+            /*currentCulture = CultureInfo.CurrentCulture;*/
+            
+
+            try
+            {
+                
+                rec.RequestRecognizerUpdate();
+                
+                rec.LoadGrammar(gr);
+
+                rec.SpeechRecognized += Rec_SpeechRecognized;
+                
+                rec.SetInputToDefaultAudioDevice();
+                
+                rec.RecognizeAsync(RecognizeMode.Multiple);
+                
+            }
+            catch
+            {
+                s.Speak("HI, The control is in catch now");
+                return;
+            }
+            Choices sList = new Choices();
+            sList.Add(new string[] { "google.com", "facebook.com", "gmail.com", "yahoo.com", "youtube.com"});
+            Grammar gr1 = new Grammar(new GrammarBuilder(sList));
+            
+
+
+            InitializeComponent();
+        }
+
+       
+
+        /// <summary>
+        /// a special function used for Speech recognition (private void Rec_SpeechRecognized(object sender, SpeechRecognizedEventArgs e))
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void Rec_SpeechRecognized(object sender, SpeechRecognizedEventArgs e)
+        {
+            String r = e.Result.Text;
+            //whenever user says to refresh the page it is matched with the predefined command and then refreshes the page
+            if (r == "refresh")
+            {
+               // say("refreshing the page");
+                WebBrowser browser = metroTabControl1.SelectedTab.Controls[0] as WebBrowser;
+                if (browser != null)
+                {
+                    browser.Refresh();
+                    //say("refreshing done");
+                }
+                // web.refresh_Click();
+
+            }
+            //whenever user says to open a new tab the page it is matched with the predefined command and then opens a new tab
+            if (r == "new tab")
+            {
+               // say("opening a new tab");
+                NewTab();
+                //say("opening done");
+            }
+            //whenever user says to stop the execution of the page is stopped
+            if (r == "stop")
+            {
+                //say("stopping the execution");
+                WebBrowser browser = metroTabControl1.SelectedTab.Controls[0] as WebBrowser;
+                browser.Stop();
+                //say("execution stopped");
+            }
+            //whenever the user says to go back then the browser is navigated to the previous existing page
+            if (r == "go back")
+            {
+                //say("going to the previous page");
+                WebBrowser browser = metroTabControl1.SelectedTab.Controls[0] as WebBrowser;
+                if (browser != null)
+                {
+                    if (browser.CanGoBack)
+                    {
+                        browser.GoBack();
+                        //say("we are on the previous page");
+                    }
+                    else
+                    {
+                        say("there are no pages to go back");
+                    }
+                }
+            }
+            //whenever the user says to go forward the browser is navigated to the next existing pages
+            if (r == "go forward")
+            {
+                //say("going to the next page");
+                WebBrowser browser = metroTabControl1.SelectedTab.Controls[0] as WebBrowser;
+                if (browser != null)
+                {
+                    if (browser.CanGoForward)
+                    {
+                        browser.GoForward();
+                        //say("we are on the next page now");
+                    }
+                }
+            }
+            if(r== "address bar")
+            {
+                this.ActiveControl = textUrl;
+                //textUrl.Text = textUrl.Text + " " + e.Result.Text.ToString();
+                textUrl.Clear();
+                
+                Choices sList = new Choices();
+                sList.Add(new string[] { "google", "exit from the browser", "facebook", "gmail",
+                    "amazon", "twitter", "instagram", "snapchat", "exit", "india bix", "avanthi" });
+                Grammar gr = new Grammar(new GrammarBuilder(sList));
+                try
+                {
+                    sRecognize.RequestRecognizerUpdate();
+                    sRecognize.LoadGrammar(gr);
+                    sRecognize.SpeechRecognized += SRecognize_SpeechRecognized;
+                    sRecognize.SetInputToDefaultAudioDevice();
+                    sRecognize.RecognizeAsync(RecognizeMode.Multiple);
+                    //sSynth.Speak("we are in try block");
+                    sSynth.Speak("website's name please");
+                }
+                catch
+                {
+                    sSynth.Speak("we are in catch block");
+                    return;
+                }
+                //sRecognize.RecognizeAsyncStop();
+            }
+            //this function is used to get a web page go back to its normal size
+            if (r=="zoom in to normal")
+            {
+                //s.Speak("Zooming to normal");
+                WebBrowser browser = metroTabControl1.SelectedTab.Controls[0] as WebBrowser;
+                if (browser != null)
+                {
+
+                    browser.Document.Body.Style = "zoom:100%;";
+                }
+            }
+            //this function makes the webpage go 50% more than its usual size
+            if(r=="zoom in")
+            {
+                int i = 100;
+               // s.Speak("zooming in");
+                WebBrowser browser = metroTabControl1.SelectedTab.Controls[0] as WebBrowser;
+                if (browser != null)
+                {
+                    //s.Speak("yo");
+                    i = i + 50;
+                    browser.Document.Body.Style = "zoom:150%;";
+                    //browser.AutoScrollOffset()
+                    //s.Speak("yo");
+                }
+                else
+                {
+                    s.Speak("unable to zoom");
+                }
+            }
+            //this function is used to make user go to its half the ratio
+            if(r=="zoom out")
+            {
+                //int i = 100;
+                //s.Speak("zooming out the page");
+                WebBrowser browser = metroTabControl1.SelectedTab.Controls[0] as WebBrowser;
+                if (browser != null)
+                {
+                    //s.Speak("yo");
+                    //i = i + 10;
+                    browser.Document.Body.Style = "zoom:50%;";
+                    //s.Speak("yo");
+                }
+            }
+            if(r== "close tab")
+            {
+                int i = 1;
+                if (metroTabControl1.TabPages.Count != 1)
+                {
+                    metroTabControl1.TabPages.RemoveAt(metroTabControl1.SelectedIndex);
+                    metroTabControl1.SelectTab(metroTabControl1.TabPages.Count - 1);
+                    i = i - 1;
+                }
+            }
+            //this function helps in scrolling down the web page
+            if (r=="scroll down")
+            {
+                /*WebBrowser browser = sender as WebBrowser;
+                browser.Document.Body.ScrollIntoView(false);*/
+               // s.Speak("scrolling down");
+                System.Windows.Forms.SendKeys.Send("{PGDN}");
+            }
+            //this function is used to scroll up the webpage
+            if (r=="scroll up")
+            {
+               // s.Speak("scrolling up");
+                System.Windows.Forms.SendKeys.Send("{PGUP}");
+            }
+            //this function is used to scroll right the webpage
+            Point scrollpoint = new Point(50, 50);
+            if (r=="scroll right")
+            {
+                s.Speak("scrolling the page to right");
+                System.Windows.Forms.SendKeys.Send("{RIGHT}");
+            }
+            //this function is used to scroll left the webpage
+            if (r=="scroll left")
+            {
+                s.Speak("scrolling the page to left");
+                System.Windows.Forms.SendKeys.Send("{LEFT}");
+            }
+            //this function is used to scroll completely bottom of the webpage
+            if (r== "go to end")
+            {
+                System.Windows.Forms.SendKeys.Send("{END}");
+            }
+            //this function is used to scroll completely top of the webpage
+            if (r=="go to top")
+            {
+                System.Windows.Forms.SendKeys.Send("{HOME}");
+            }
+            //this function is used to open facebook.com
+            if (r== "open facebook")
+            {
+                TabPage tab = new TabPage();
+                tab.Text = "New Tab";
+                metroTabControl1.Controls.Add(tab);
+                metroTabControl1.SelectTab(metroTabControl1.TabCount - 1);
+                WebBrowser browser = new WebBrowser();
+                browser.Parent = tab;
+                browser.Dock = DockStyle.Fill;
+                browser.Navigate("https://www.facebook.com");
+                textUrl.Text = "https://www.facebook.com";
+                browser.DocumentCompleted += Browser_DocumentCompleted;
+                //this.ActiveControl = browser;
+            }
+            if (r== "open gmail")
+            {
+                TabPage tab = new TabPage();
+                tab.Text = "New Tab";
+                metroTabControl1.Controls.Add(tab);
+                metroTabControl1.SelectTab(metroTabControl1.TabCount - 1);
+                WebBrowser browser = new WebBrowser();
+                browser.Parent = tab;
+                browser.Dock = DockStyle.Fill;
+                browser.Navigate("https://www.gmail.com");
+                textUrl.Text = "https://www.gmail.com";
+                browser.DocumentCompleted += Browser_DocumentCompleted;
+                //ActiveControl = browser;
+
+                /*Choices s1list = new Choices();
+                s1list.Add(new string[] { "login"});
+                Grammar gr = new Grammar(new GrammarBuilder(s1list));
+                try
+                {
+                    s1rec.RequestRecognizerUpdate();
+                    s1rec.LoadGrammar(gr);
+                    s1rec.SpeechRecognized += S1rec_SpeechRecognized;
+                    s1rec.SetInputToDefaultAudioDevice();
+                    s1rec.RecognizeAsync(RecognizeMode.Multiple);
+                    //sSynth.Speak("we are in try block");
+                    sSynth.Speak("website's name please");
+                }
+                catch
+                {
+                    sSynth.Speak("we are in catch block");
+                    return;
+                }*/
+            }
+            /*if(r=="login")
+            {
+                WebBrowser browser = new WebBrowser();
+                browser.Document.GetElementById("signIn").InvokeMember("click");
+            }*/
+            //if the user says to close the entire web broowser is closed
+            if( r=="close")
+            {
+                Application.Exit();
+            }
+
+
+            //simply for making system to communicate with the user
+            if (r == "hello")
+            {
+                say("hi");
+            }
+            //simply for making system to communicate with the user
+            if (r == "hi")
+            {
+                say("hello");
+            }
+            //simply for making system to communicate with the user
+            if (r == "how are you doing")
+            {
+                say("I am doing good, how can I help you");
+            }
+           
+        }
+
+        /*private void S1rec_SpeechRecognized(object sender, SpeechRecognizedEventArgs e)
+        {
+            if(e.Result.Text=="login")
+            {
+                WebBrowser browser = new WebBrowser();
+                browser.Document.GetElementById("signIn").InvokeMember("click");
+            }
+        }*/
+
+        /// <summary>
+        /// user defined function for making the system to speak (public void say(String h))
+        /// </summary>
+        /// <param name="h"></param>
+        public void say(String h)
+        {
+            s.Speak(h);
+        }
+
+        /// <summary>
+        /// this method is for back button
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void lnkBack_Click(object sender, EventArgs e)
+        {
+            WebBrowser browser = metroTabControl1.SelectedTab.Controls[0] as WebBrowser;
+            if (browser != null)
+            {
+                if (browser.CanGoBack)
+                {
+                    browser.GoBack();
+                }
+            }
+        }
+
+        /// <summary>
+        /// this method is for forward button
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void lnkForward_Click(object sender, EventArgs e)
+        {
+            WebBrowser browser = metroTabControl1.SelectedTab.Controls[0] as WebBrowser;
+            if (browser != null)
+            {
+                if(browser.CanGoForward)
+                {
+                    browser.GoForward();
+                }
+            }
+        }
+
+        /// <summary>
+        /// this method is for textUrlclick
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void textUrl_Click(object sender, EventArgs e)
+        {
+            this.ActiveControl = textUrl;
+        }
+
+        /// <summary>
+        /// this button is used for navigating to a the link provided in the textUrl
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void Go_Click(object sender, EventArgs e)
+        {
+            WebBrowser browser = metroTabControl1.SelectedTab.Controls[0] as WebBrowser;
+            if (browser != null)
+            {
+               // browser.Navigate(metroComboBox1.Text);
+                browser.Navigate(textUrl.Text);
+            }
+        }
+
+        private void openlink()
+        {
+            TabPage tab = new TabPage();
+            tab.Text = "New Tab";
+            metroTabControl1.Controls.Add(tab);
+            metroTabControl1.SelectTab(metroTabControl1.TabCount - 1);
+            WebBrowser browser = new WebBrowser();
+            browser.Parent = tab;
+            browser.Dock = DockStyle.Fill;
+            browser.Navigate("https://www.facebook.com");
+            textUrl.Text = "https://www.facebook.com";
+            browser.DocumentCompleted += Browser_DocumentCompleted;
+        }
+
+        /// <summary>
+        /// this method is for opening a new tab when new tab button is clicked
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void New_Tab_Click(object sender, EventArgs e)
+        {
+            NewTab();
+        }
+
+        /// <summary>
+        /// this is a user defined function where the real definition of navigating to web pages lies
+        /// </summary>
+        private void NewTab()
+        {
+
+            TabPage tab = new TabPage();
+            tab.Text = "New Tab";
+            metroTabControl1.Controls.Add(tab);
+            metroTabControl1.SelectTab(metroTabControl1.TabCount - 1);
+            WebBrowser browser = new WebBrowser();
+            browser.Parent = tab;
+            browser.Dock = DockStyle.Fill;
+            browser.Navigate("https://www.google.com");
+            textUrl.Text = "https://www.google.com";
+            browser.DocumentCompleted += Browser_DocumentCompleted;
+        }
+
+        /// <summary>
+        /// it is a predefined function used when the function is loading
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void Form1_Load(object sender, EventArgs e)
+        {
+            //metroComboBox1.SelectedItem = metroComboBox1.Items[0];
+            NewTab();
+        }
+
+        /// <summary>
+        /// when all the browser work is completed then this method is called
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void Browser_DocumentCompleted(object sender, WebBrowserDocumentCompletedEventArgs e)
+        {
+            WebBrowser browser = metroTabControl1.SelectedTab.Controls[0] as WebBrowser;
+            //Form2 f2 = new Form2();
+            
+            if(browser != null)
+            {
+                metroTabControl1.SelectedTab.Text = browser.DocumentTitle;
+                
+            }
+        }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void metroButton1_Click(object sender, EventArgs e)
+        {
+            WebBrowser browser = metroTabControl1.SelectedTab.Controls[0] as WebBrowser;
+            if (browser != null)
+            {
+                browser.Refresh();
+            }
+        }
+
+        /// <summary>
+        /// this is one of the events present for textUrl.......used as when the user pess enter key the browser is navigated
+        /// to the entered text.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void textUrl_KeyPress(object sender, KeyPressEventArgs e)
+        {
+            if (e.KeyChar == (char)ConsoleKey.Enter)
+            {
+                WebBrowser browser = metroTabControl1.SelectedTab.Controls[0] as WebBrowser;
+                if (browser != null)
+                {
+                    browser.Navigate(textUrl.Text);
+                }
+            }
+        }
+        /// <summary>
+        /// this is one of the user defined function used for stopping the execution of the process
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void stop(object sender, EventArgs e)
+        {
+            WebBrowser browser = metroTabControl1.SelectedTab.Controls[0] as WebBrowser;
+            browser.Stop();
+        }
+        PromptBuilder pBuilder = new PromptBuilder();
+        SpeechRecognitionEngine sRecognize = new SpeechRecognitionEngine(new System.Globalization.CultureInfo("en-US"));
+        SpeechRecognitionEngine s1rec = new SpeechRecognitionEngine(new System.Globalization.CultureInfo("en-US"));
+        /// <summary>
+        /// this is a user cum pre defined FUNCTION to recognize that is to be store in the address bar(textUrl)
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void SRecognize_SpeechRecognized(object sender, SpeechRecognizedEventArgs e)
+        {
+            textUrl.Clear();
+            if (e.Result.Text == "exit")
+            {
+                sRecognize.RecognizeAsyncStop();
+                return;
+            }
+
+            else
+            {
+                textUrl.Text = "www."+e.Result.Text.ToString()+".com";
+                //textUrl.AppendText(".com");
+                WebBrowser browser = metroTabControl1.SelectedTab.Controls[0] as WebBrowser;
+                if (browser != null)
+                {
+                    browser.Navigate(textUrl.Text);
+                    //sRecognize.RecognizeAsyncStop();
+                    //return;
+                }
+                //return;
+            }
+        }
+
+        private void metroButton1_Click_1(object sender, EventArgs e)
+        {
+            int i = 1;
+            if(metroTabControl1.TabPages.Count!=1)
+            {
+                metroTabControl1.TabPages.RemoveAt(metroTabControl1.SelectedIndex);
+                metroTabControl1.SelectTab(metroTabControl1.TabPages.Count - 1);
+                i = i - 1;
+            }
+        }
+        
+        /*private void metroButton2_Click(object sender, EventArgs e)
+        {
+            History f2 = new History();
+            //this.Hide();
+            //f2.ShowDialog();
+            f2.Visible = true;
+        }*/
+
+        /*private void textUrl_TextChanged(object sender, EventArgs e)
+        {
+            History f2 = new History(textUrl.Text);
+
+        }*/
+
+
+        /*private void metroButton1_Click_1(object sender, EventArgs e)
+        {
+            WebBrowser browser = new WebBrowser();
+            browser.Document.GetElementById("signIn").InvokeMember("click");
+        }*/
+    }
+}
